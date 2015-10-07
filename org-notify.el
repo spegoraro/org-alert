@@ -41,38 +41,34 @@
 (defvar org-notify-interval 300
   "Interval in seconds to recheck and display deadlines.")
 
-(defvar org-notify-todo-states '("TODO" "STARTED")
-  "List of strings containing possible todo states for your org files.")
-
-(defvar org-notify-done-state "DONE"
-  "String containing the default state for done items.")
-
 (defvar org-notify-notification-title "*org*"
   "Title to be sent with notify-send.")
 
 (defun org-notify--get-deadlines ()
   "Return the current org agenda as text only."
   (org-agenda-list 1)
-  (let ((agenda-content (buffer-substring-no-properties (point-min) (point-max))))
-    (org-agenda-quit)
-    (-map (lambda (dl) (s-chop-prefix "Deadline:   " dl))
-	  (-flatten (s-match-strings-all "Deadline:.+" agenda-content)))))
+  (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
+    (delete-window)
+    (--map (s-chop-prefix "Deadline:   " it)
+	   (-flatten (s-match-strings-all "Deadline:.+" agenda)))))
+
+(defun org-notify--headline-complete? (headline)
+  "Return whether HEADLINE has been completed."
+  (--any? (s-starts-with? it headline) org-done-keywords-for-agenda))
 
 (defun org-notify--filter-active (deadlines)
   "Remove any completed headings from the provided DEADLINES."
-  (-remove (lambda (dl)
-	     (s-starts-with? org-notify-done-state dl)) deadlines))
+  (-remove 'org-notify--headline-complete? deadlines))
 
 (defun org-notify--strip-states (deadlines)
   "Remove the todo states from DEADLINES."
-  (-map (lambda (dl)
-	  (s-trim (s-chop-prefixes org-notify-todo-states dl))) deadlines))
+  (--map (s-trim (s-chop-prefixes org-todo-keywords-for-agenda it)) deadlines))
 
 (defun org-notify-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (let ((active-deadlines (org-notify--filter-active (org-notify--get-deadlines))))
-    (dolist (dl (org-notify--strip-states active-deadlines))
+  (let ((active (org-notify--filter-active (org-notify--get-deadlines))))
+    (dolist (dl (org-notify--strip-states active))
       (alert dl :title org-notify-notification-title))))
 
 (defun org-notify-enable ()
