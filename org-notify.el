@@ -44,13 +44,19 @@
 (defvar org-notify-notification-title "*org*"
   "Title to be sent with notify-send.")
 
+(defun org-notify--strip-prefix (headline)
+  "Remove the scheduled/deadline prefix from HEADLINE."
+  (replace-regexp-in-string ".+:\s+" "" headline))
+
 (defun org-notify--get-deadlines ()
   "Return the current org agenda as text only."
   (org-agenda-list 1)
   (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
     (delete-window)
-    (--map (s-chop-prefix "Deadline:   " it)
-	   (-flatten (s-match-strings-all "Deadline:.+" agenda)))))
+    (--map (org-notify--strip-prefix it)
+	   (-distinct
+	    (-flatten
+	     (s-match-strings-all "\\(Sched.+:.+\\|Deadline:.+\\)" agenda))))))
 
 (defun org-notify--headline-complete? (headline)
   "Return whether HEADLINE has been completed."
