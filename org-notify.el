@@ -46,6 +46,9 @@
 (defvar org-notify-done-state "DONE"
   "String containing the default state for done items.")
 
+(defvar org-notify-notification-title "*org*"
+  "Title to be sent with notify-send.")
+
 (defun org-notify--get-deadlines ()
   "Return the current org agenda as text only."
   (org-agenda-list 1)
@@ -69,7 +72,7 @@
   (interactive)
   (let ((active-deadlines (org-notify--filter-active (org-notify--get-deadlines))))
     (dolist (dl (org-notify--strip-states active-deadlines))
-      (start-process "org-notify" nil "notify-send" "*org*" dl))))
+      (start-process "org-notify" nil "notify-send" org-notify-notification-title dl))))
 
 (defun org-notify-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
