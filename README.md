@@ -1,6 +1,6 @@
 # org-alert
 
-Provides notifications for active org agenda deadlines via notify-send.
+Provides notifications for active org agenda deadlines.
 
 ![Screenshot](/../screenshots/screenshot.png?raw=true "org-alert screenshot")
 
