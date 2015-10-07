@@ -38,44 +38,77 @@
 (require 'dash)
 (require 'alert)
 
+
 (defvar org-notify-interval 300
   "Interval in seconds to recheck and display deadlines.")
 
+
 (defvar org-notify-notification-title "*org*"
   "Title to be sent with notify-send.")
+
+
+(defun org-notify--preserve-agenda-buffer ()
+  "Rename any existing agenda buffer to avoid clobbering."
+  (let ((agenda-buffer (get-buffer org-agenda-buffer-name)))
+    (if agenda-buffer
+	(with-current-buffer agenda-buffer
+	  (rename-buffer (concat "~" org-agenda-buffer-name))))))
+
+
+(defun org-notify--restore-agenda-buffer ()
+  "Restore the renamed agenda buffer if it exists."
+  (let ((agenda-buffer (get-buffer (concat "~" org-agenda-buffer-name))))
+    (if agenda-buffer
+	(with-current-buffer agenda-buffer
+	  (rename-buffer org-agenda-buffer-name)))))
+
 
 (defun org-notify--strip-prefix (headline)
   "Remove the scheduled/deadline prefix from HEADLINE."
   (replace-regexp-in-string ".+:\s+" "" headline))
 
-(defun org-notify--get-deadlines ()
+
+(defun org-notify--unique-headlines (regexp, agenda)
+  "Return unique headlines from the regexp reusults in MATCHES."
+  (let ((matches (-distinct (-flatten s-match-strings-all regexp agenda))))
+    (--map (org-notify--strip-prefix it) matches)))
+
+
+(defun org-notify--get-headlines ()
   "Return the current org agenda as text only."
-  (org-agenda-list 1)
-  (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
-    (delete-window)
-    (--map (org-notify--strip-prefix it)
-	   (-distinct
-	    (-flatten
-	     (s-match-strings-all "\\(Sched.+:.+\\|Deadline:.+\\)" agenda))))))
+  (let ((agenda-setup org-agenda-window-setup))
+    (setq org-agenda-window-setup 'current-window)
+    (org-agenda-list 1)
+    (setq org-agenda-window-setup agenda-setup)
+    (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
+      (kill-buffer)
+      (org-notify--unique-headlines "\\(Sched.+:.+\\|Deadline:.+\\)" agenda))))
+
 
 (defun org-notify--headline-complete? (headline)
   "Return whether HEADLINE has been completed."
   (--any? (s-starts-with? it headline) org-done-keywords-for-agenda))
 
+
 (defun org-notify--filter-active (deadlines)
   "Remove any completed headings from the provided DEADLINES."
   (-remove 'org-notify--headline-complete? deadlines))
+
 
 (defun org-notify--strip-states (deadlines)
   "Remove the todo states from DEADLINES."
   (--map (s-trim (s-chop-prefixes org-todo-keywords-for-agenda it)) deadlines))
 
+
 (defun org-notify-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (let ((active (org-notify--filter-active (org-notify--get-deadlines))))
+  (org-notify--preserve-agenda-buffer)
+  (let ((active (org-notify--filter-active (org-notify--get-headlines))))
     (dolist (dl (org-notify--strip-states active))
-      (alert dl :title org-notify-notification-title))))
+      (alert dl :title org-notify-notification-title)))
+  (org-notify--restore-agenda-buffer))
+
 
 (defun org-notify-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
@@ -83,12 +116,15 @@
   (org-notify-disable)
   (run-at-time 0 org-notify-interval 'org-notify-check))
 
+
 (defun org-notify-disable ()
   "Cancel the running notification timer."
   (interactive)
   (dolist (timer timer-list)
     (if (eq (elt timer 5) 'org-notify-check)
 	(cancel-timer timer))))
+
+
 
 (provide 'org-notify)
 ;;; org-notify.el ends here
