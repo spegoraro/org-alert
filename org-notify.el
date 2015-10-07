@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.1.0
-;; Package-Requires: ((s "1.10.0") (dash "2.12.0"))
+;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (alert "1.2))
 ;; Keywords: org, org-mode, notify, notifications
 ;; URL: https://github.com/groksteve/org-notify
 
@@ -36,6 +36,7 @@
 
 (require 's)
 (require 'dash)
+(require 'alert)
 
 (defvar org-notify-interval 300
   "Interval in seconds to recheck and display deadlines.")
@@ -72,7 +73,7 @@
   (interactive)
   (let ((active-deadlines (org-notify--filter-active (org-notify--get-deadlines))))
     (dolist (dl (org-notify--strip-states active-deadlines))
-      (start-process "org-notify" nil "notify-send" org-notify-notification-title dl))))
+      (alert dl :title org-notify-notification-title))))
 
 (defun org-notify-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
