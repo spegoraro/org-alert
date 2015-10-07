@@ -70,7 +70,7 @@
 
 (defun org-alert--unique-headlines (regexp agenda)
   "Return unique headlines from the results of REGEXP in AGENDA."
-  (let ((matches (-distinct (-flatten s-match-strings-all regexp agenda))))
+  (let ((matches (-distinct (-flatten (s-match-strings-all regexp agenda)))))
     (--map (org-alert--strip-prefix it) matches)))
 
 
