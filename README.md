@@ -1,6 +1,6 @@
 # org-alert
 
-Provides notifications for active org agenda deadlines.
+Provides notifications for scheduled or deadlined agenda entries.
 
 ![Screenshot](/../screenshots/screenshot.png?raw=true "org-alert screenshot")
 
@@ -9,7 +9,7 @@ Provides notifications for active org agenda deadlines.
 ## Command overview
 ### `org-alert-check`
 
-> Check for and display agenda deadlines that are active and due.
+> Check for and display agenda entries that are active and due.
 
 org-alert parses your org agenda for the current day looking for any
 headlines that are scheduled or contain a deadline that aren't marked
@@ -20,7 +20,7 @@ with any of your `DONE` state keywords.
 
 > Enable periodic deadline checking.
 
-Sets a timer which periodically calls `org-alert-check`. The polling
+Sets a timer which periodically calls `org-alert-check`. The
 interval can be set by changing the `org-alert-interval` (defaults to
 300s).
 
@@ -44,7 +44,7 @@ Installing via melpa is a simple as:
 Clone the repo somewhere you will remember and then add it to your
 load path.
 ```elisp
-(add-to-list 'load-path "path/to/cloned/repo")
+(add-to-list 'load-path "path/to/org-alert")
 (require 'org-alert)
 ```
 
