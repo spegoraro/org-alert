@@ -37,6 +37,7 @@
 (require 's)
 (require 'dash)
 (require 'alert)
+(require 'org-agenda)
 
 
 (defvar org-alert-interval 300
