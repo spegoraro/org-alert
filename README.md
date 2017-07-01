@@ -75,6 +75,11 @@ variable. Use this if you'd like to customise the display of org
 notifications when using a daemon such as
 [dunst](https://github.com/knopwob/dunst).
 
+### Custom regexp for searching agenda entries
+
+org-alert searches for agenda entries with 'Sched' or 'Deadline' word
+by default. You can set any other regexp you wish using
+the `org-alert-headline-regexp` variable.
 
 ## TODOs
 
