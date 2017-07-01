@@ -66,7 +66,7 @@
 
 (defun org-alert--strip-prefix (headline)
   "Remove the scheduled/deadline prefix from HEADLINE."
-  (replace-regexp-in-string ".+:\s+" "" headline))
+  (replace-regexp-in-string ".*:\s+" "" headline))
 
 
 (defun org-alert--unique-headlines (regexp agenda)
