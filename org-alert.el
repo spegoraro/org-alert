@@ -106,13 +106,14 @@
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (org-alert--preserve-agenda-buffer)
-  (save-excursion
-    (save-restriction
-      (let ((active (org-alert--filter-active (org-alert--get-headlines))))
-	(dolist (dl (org-alert--strip-states active))
-	  (alert dl :title org-alert-notification-title)))))
-  (org-alert--restore-agenda-buffer))
+  (unless (minibufferp)
+    (org-alert--preserve-agenda-buffer)
+    (save-excursion
+      (save-restriction
+	(let ((active (org-alert--filter-active (org-alert--get-headlines))))
+	  (dolist (dl (org-alert--strip-states active))
+	    (alert dl :title org-alert-notification-title)))))
+    (org-alert--restore-agenda-buffer)))
 
 
 (defun org-alert-enable ()
