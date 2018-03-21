@@ -4,8 +4,8 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.1.0
-;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (alert "1.2"))
-;; Keywords: org, org-mode, notify, notifications
+;; Package-Requires: ((s "1.10.0") (dash "2.11.0") (alert "1.2"))
+;; Keywords: org, org-mode, notify, notifications, calendar
 ;; URL: https://github.com/groksteve/org-alert
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -50,22 +50,6 @@
 (defvar org-alert-headline-regexp "\\(Sched.+:.+\\|Deadline:.+\\)"
   "Regexp for headlines to search in agenda buffer.")
 
-(defun org-alert--preserve-agenda-buffer ()
-  "Rename any existing agenda buffer to avoid clobbering."
-  (let ((agenda-buffer (get-buffer org-agenda-buffer-name)))
-    (if agenda-buffer
-        (with-current-buffer agenda-buffer
-          (rename-buffer (concat "~" org-agenda-buffer-name))))))
-
-
-(defun org-alert--restore-agenda-buffer ()
-  "Restore the renamed agenda buffer if it exists."
-  (let ((agenda-buffer (get-buffer (concat "~" org-agenda-buffer-name))))
-    (if agenda-buffer
-        (with-current-buffer agenda-buffer
-          (rename-buffer org-agenda-buffer-name)))))
-
-
 (defun org-alert--strip-prefix (headline)
   "Remove the scheduled/deadline prefix from HEADLINE."
   (replace-regexp-in-string ".*:\s+" "" headline))
@@ -79,13 +63,12 @@
 
 (defun org-alert--get-headlines ()
   "Return the current org agenda as text only."
-  (let ((agenda-setup org-agenda-window-setup))
-    (setq org-agenda-window-setup 'current-window)
-    (org-agenda-list 1)
-    (setq org-agenda-window-setup agenda-setup)
-    (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
-      (kill-buffer)
-      (org-alert--unique-headlines org-alert-headline-regexp agenda))))
+  (let (org-agenda-buffer-tmp-name org-agenda-buffer-name)
+    (with-temp-buffer
+      (let ((org-agenda-buffer-tmp-name (current-buffer)))
+	(org-agenda-list 1)
+	(org-alert--unique-headlines org-alert-headline-regexp
+				     (buffer-substring-no-properties (point-min) (point-max)))))))
 
 
 (defun org-alert--headline-complete? (headline)
@@ -106,13 +89,13 @@
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (org-alert--preserve-agenda-buffer)
-  (save-excursion
-    (save-restriction
-      (let ((active (org-alert--filter-active (org-alert--get-headlines))))
-	(dolist (dl (org-alert--strip-states active))
-	  (alert dl :title org-alert-notification-title)))))
-  (org-alert--restore-agenda-buffer))
+  ;; avoid interrupting current command.
+  (unless (minibufferp)
+    (save-excursion
+      (save-restriction
+	(let ((active (org-alert--filter-active (org-alert--get-headlines))))
+	  (dolist (dl (org-alert--strip-states active))
+	    (alert dl :title org-alert-notification-title)))))))
 
 
 (defun org-alert-enable ()
