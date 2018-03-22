@@ -65,7 +65,8 @@
   "Return the current org agenda as text only."
   (let (org-agenda-buffer-tmp-name org-agenda-buffer-name)
     (with-temp-buffer
-      (let ((org-agenda-buffer-tmp-name (current-buffer)))
+      (let ((org-agenda-sticky nil)
+	    (org-agenda-buffer-tmp-name (current-buffer)))
 	(org-agenda-list 1)
 	(org-alert--unique-headlines org-alert-headline-regexp
 				     (buffer-substring-no-properties (point-min) (point-max)))))))
@@ -95,7 +96,11 @@
       (save-restriction
 	(let ((active (org-alert--filter-active (org-alert--get-headlines))))
 	  (dolist (dl (org-alert--strip-states active))
-	    (alert dl :title org-alert-notification-title)))))))
+	    (alert dl :title org-alert-notification-title)))))
+    (when (get-buffer org-agenda-buffer-name)
+      (ignore-errors
+    	(with-current-buffer org-agenda-buffer-name
+    	  (org-agenda-redo t))))))
 
 
 (defun org-alert-enable ()
