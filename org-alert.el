@@ -63,13 +63,12 @@
 
 (defun org-alert--get-headlines ()
   "Return the current org agenda as text only."
-  (let (org-agenda-buffer-tmp-name org-agenda-buffer-name)
-    (with-temp-buffer
-      (let ((org-agenda-sticky nil)
-	    (org-agenda-buffer-tmp-name (buffer-name)))
-	(org-agenda-list 1)
-	(org-alert--unique-headlines org-alert-headline-regexp
-				     (buffer-substring-no-properties (point-min) (point-max)))))))
+  (with-temp-buffer
+    (let ((org-agenda-sticky nil)
+	  (org-agenda-buffer-tmp-name (buffer-name)))
+      (ignore-errors (org-agenda-list 1))
+      (org-alert--unique-headlines org-alert-headline-regexp
+				   (buffer-substring-no-properties (point-min) (point-max))))))
 
 
 (defun org-alert--headline-complete? (headline)
