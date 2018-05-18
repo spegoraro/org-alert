@@ -34,8 +34,6 @@
 
 ;;; Code:
 
-(require 's)
-(require 'dash)
 (require 'alert)
 (require 'org-agenda)
 
@@ -47,59 +45,15 @@
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
 
-(defvar org-alert-headline-regexp "\\(Sched.+:.+\\|Deadline:.+\\)"
-  "Regexp for headlines to search in agenda buffer.")
-
-(defun org-alert--strip-prefix (headline)
-  "Remove the scheduled/deadline prefix from HEADLINE."
-  (replace-regexp-in-string ".*:\s+" "" headline))
-
-
-(defun org-alert--unique-headlines (regexp agenda)
-  "Return unique headlines from the results of REGEXP in AGENDA."
-  (let ((matches (-distinct (-flatten (s-match-strings-all regexp agenda)))))
-    (--map (org-alert--strip-prefix it) matches)))
-
-
-(defun org-alert--get-headlines ()
-  "Return the current org agenda as text only."
-  (with-temp-buffer
-    (let ((org-agenda-sticky nil)
-	  (org-agenda-buffer-tmp-name (buffer-name)))
-      (ignore-errors (org-agenda-list 1))
-      (org-alert--unique-headlines org-alert-headline-regexp
-				   (buffer-substring-no-properties (point-min) (point-max))))))
-
-
-(defun org-alert--headline-complete? (headline)
-  "Return whether HEADLINE has been completed."
-  (--any? (s-starts-with? it headline) org-done-keywords-for-agenda))
-
-
-(defun org-alert--filter-active (deadlines)
-  "Remove any completed headings from the provided DEADLINES."
-  (-remove 'org-alert--headline-complete? deadlines))
-
-
-(defun org-alert--strip-states (deadlines)
-  "Remove the todo states from DEADLINES."
-  (--map (s-trim (s-chop-prefixes org-todo-keywords-for-agenda it)) deadlines))
-
+(defun org-alert--dispatch ()
+  (alert (org-get-heading t t t t) :title org-alert-notification-title))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
   ;; avoid interrupting current command.
-  (unless (minibufferp)
-    (save-excursion
-      (save-restriction
-	(let ((active (org-alert--filter-active (org-alert--get-headlines))))
-	  (dolist (dl (org-alert--strip-states active))
-	    (alert dl :title org-alert-notification-title)))))
-    (when (get-buffer org-agenda-buffer-name)
-      (ignore-errors
-    	(with-current-buffer org-agenda-buffer-name
-    	  (org-agenda-redo t))))))
+  (org-map-entries 'org-alert--dispatch "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\"" 'agenda
+                   '(org-agenda-skip-entry-if 'todo org-done-keywords-for-agenda)))
 
 
 (defun org-alert-enable ()
