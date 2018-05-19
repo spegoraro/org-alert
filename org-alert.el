@@ -3,10 +3,10 @@
 ;; Copyright (C) 2015 Stephen Pegoraro
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
-;; Version: 0.1.0
-;; Package-Requires: ((s "1.10.0") (dash "2.11.0") (alert "1.2"))
+;; Version: 0.2.0
+;; Package-Requires: ((alert "1.2"))
 ;; Keywords: org, org-mode, notify, notifications, calendar
-;; URL: https://github.com/groksteve/org-alert
+;; URL: https://github.com/spegoraro/org-alert
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -45,15 +45,19 @@
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
 
+(defvar org-alert-match-string
+  "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
+  "property/todo/tags match string to be passed to `org-map-entries'.")
+
 (defun org-alert--dispatch ()
   (alert (org-get-heading t t t t) :title org-alert-notification-title))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  ;; avoid interrupting current command.
-  (org-map-entries 'org-alert--dispatch "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\"" 'agenda
-                   '(org-agenda-skip-entry-if 'todo org-done-keywords-for-agenda)))
+  (org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
+                   '(org-agenda-skip-entry-if 'todo
+                                              org-done-keywords-for-agenda)))
 
 
 (defun org-alert-enable ()
