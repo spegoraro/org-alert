@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.2.0
-;; Package-Requires: ((alert "1.2"))
+;; Package-Requires: ((org "9.0") (alert "1.2"))
 ;; Keywords: org, org-mode, notify, notifications, calendar
 ;; URL: https://github.com/spegoraro/org-alert
 
