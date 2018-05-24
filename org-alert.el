@@ -91,11 +91,12 @@
   (interactive)
   ;; avoid interrupting current command.
   (unless (minibufferp)
-    (save-excursion
-      (save-restriction
-	(let ((active (org-alert--filter-active (org-alert--get-headlines))))
-	  (dolist (dl (org-alert--strip-states active))
-	    (alert dl :title org-alert-notification-title)))))
+    (save-window-excursion
+      (save-excursion
+        (save-restriction
+          (let ((active (org-alert--filter-active (org-alert--get-headlines))))
+            (dolist (dl (org-alert--strip-states active))
+              (alert dl :title org-alert-notification-title))))))
     (when (get-buffer org-agenda-buffer-name)
       (ignore-errors
     	(with-current-buffer org-agenda-buffer-name
