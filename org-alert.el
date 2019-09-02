@@ -50,6 +50,9 @@
 (defvar org-alert-headline-regexp "\\(Sched.+:.+\\|Deadline:.+\\)"
   "Regexp for headlines to search in agenda buffer.")
 
+(defvar org-alert-alert-before nil
+  "Alert only before the set time(min) of the task time, nil means alert all day.")
+
 (defun org-alert--strip-prefix (headline)
   "Remove the scheduled/deadline prefix from HEADLINE."
   (replace-regexp-in-string ".*:\s+" "" headline))
@@ -60,6 +63,27 @@
   (let ((matches (-distinct (-flatten (s-match-strings-all regexp agenda)))))
     (--map (org-alert--strip-prefix it) matches)))
 
+(defun org-alert--filter-not-due-todos (agenda)
+  "Return only near due todos"
+  (string-join
+   (remove-if
+    #'(lambda (line)
+        (when (string-match "\\([0-9]*[0-9]:[0-9][0-9]\\)." line)
+          (let* ((match (match-string 0 line))
+                 (diff (-
+                        (float-time
+                         (date-to-time
+                          (format-time-string (concat "%Y-%m-%d " match))))
+                        (float-time
+                         (date-to-time
+                          (current-time-string))))))
+            (if org-alert-alert-before
+                (> diff (* org-alert-alert-before 60))
+              nil)
+            )))
+    (split-string agenda "\n"))
+   "\n")
+  )
 
 (defun org-alert--get-headlines ()
   "Return the current org agenda as text only."
@@ -68,7 +92,8 @@
 	  (org-agenda-buffer-tmp-name (buffer-name)))
       (ignore-errors (org-agenda-list 1))
       (org-alert--unique-headlines org-alert-headline-regexp
-				   (buffer-substring-no-properties (point-min) (point-max))))))
+        (org-alert--filter-not-due-todos
+          (buffer-substring-no-properties (point-min) (point-max)))))))
 
 
 (defun org-alert--headline-complete? (headline)
