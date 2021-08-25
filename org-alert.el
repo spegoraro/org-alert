@@ -49,6 +49,20 @@
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
   "property/todo/tags match string to be passed to `org-map-entries'.")
 
+;; for use in place of (org-get-heading) in dispatch. trying to grab
+;; scheduled date from the subtree of the heading instead of just the
+;; heading
+(defun org-alert--parse-entry ()
+  (org-get-heading t t t t)
+  (org-copy-subtree)
+  (let* ((text (current-kill 0))
+	 (beg 0)
+	 (end (length text)))
+    (set-text-properties beg end nil text)
+    text))
+
+;; somewhere have (and cutoff (< cutoff ...)) to check if notif should
+;; be sent, and let cutoff default to nil to preserve the old behavior
 (defun org-alert--dispatch ()
   (alert (org-get-heading t t t t) :title org-alert-notification-title))
 
