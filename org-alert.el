@@ -3,10 +3,10 @@
 ;; Copyright (C) 2015 Stephen Pegoraro
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
-;; Version: 0.1.0
-;; Package-Requires: ((s "1.10.0") (dash "2.11.0") (alert "1.2"))
+;; Version: 0.2.0
+;; Package-Requires: ((org "9.0") (alert "1.2"))
 ;; Keywords: org, org-mode, notify, notifications, calendar
-;; URL: https://github.com/groksteve/org-alert
+;; URL: https://github.com/spegoraro/org-alert
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,8 +34,6 @@
 
 ;;; Code:
 
-(require 's)
-(require 'dash)
 (require 'alert)
 (require 'org-agenda)
 
@@ -47,60 +45,19 @@
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
 
-(defvar org-alert-headline-regexp "\\(Sched.+:.+\\|Deadline:.+\\)"
-  "Regexp for headlines to search in agenda buffer.")
+(defvar org-alert-match-string
+  "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
+  "property/todo/tags match string to be passed to `org-map-entries'.")
 
-(defun org-alert--strip-prefix (headline)
-  "Remove the scheduled/deadline prefix from HEADLINE."
-  (replace-regexp-in-string ".*:\s+" "" headline))
-
-
-(defun org-alert--unique-headlines (regexp agenda)
-  "Return unique headlines from the results of REGEXP in AGENDA."
-  (let ((matches (-distinct (-flatten (s-match-strings-all regexp agenda)))))
-    (--map (org-alert--strip-prefix it) matches)))
-
-
-(defun org-alert--get-headlines ()
-  "Return the current org agenda as text only."
-  (with-temp-buffer
-    (let ((org-agenda-sticky nil)
-	  (org-agenda-buffer-tmp-name (buffer-name)))
-      (ignore-errors (org-agenda-list 1))
-      (org-alert--unique-headlines org-alert-headline-regexp
-				   (buffer-substring-no-properties (point-min) (point-max))))))
-
-
-(defun org-alert--headline-complete? (headline)
-  "Return whether HEADLINE has been completed."
-  (--any? (s-starts-with? it headline) org-done-keywords-for-agenda))
-
-
-(defun org-alert--filter-active (deadlines)
-  "Remove any completed headings from the provided DEADLINES."
-  (-remove 'org-alert--headline-complete? deadlines))
-
-
-(defun org-alert--strip-states (deadlines)
-  "Remove the todo states from DEADLINES."
-  (--map (s-trim (s-chop-prefixes org-todo-keywords-for-agenda it)) deadlines))
-
+(defun org-alert--dispatch ()
+  (alert (org-get-heading t t t t) :title org-alert-notification-title))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  ;; avoid interrupting current command.
-  (unless (minibufferp)
-    (save-window-excursion
-      (save-excursion
-        (save-restriction
-          (let ((active (org-alert--filter-active (org-alert--get-headlines))))
-            (dolist (dl (org-alert--strip-states active))
-              (alert dl :title org-alert-notification-title))))))
-    (when (get-buffer org-agenda-buffer-name)
-      (ignore-errors
-    	(with-current-buffer org-agenda-buffer-name
-    	  (org-agenda-redo t))))))
+  (org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
+                   '(org-agenda-skip-entry-if 'todo
+                                              org-done-keywords-for-agenda)))
 
 
 (defun org-alert-enable ()
