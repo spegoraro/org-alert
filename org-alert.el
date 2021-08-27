@@ -34,6 +34,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'alert)
 (require 'org-agenda)
 
@@ -67,7 +68,7 @@ text-properties stripped"
   (let* ((subtree (current-kill 0))
 	 (text (org-alert--strip-text-properties subtree)))
     (apply #'concat
-	   (remove-if #'(lambda (s) (string= s ""))
+	   (cl-remove-if #'(lambda (s) (string= s ""))
 	       (cdr (split-string text "\n"))))))
 
 (defun org-alert--to-minute (hour minute)
