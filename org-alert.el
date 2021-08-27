@@ -41,6 +41,10 @@
 (defvar org-alert-interval 300
   "Interval in seconds to recheck and display deadlines.")
 
+;; TODO look for a property of the agenda entry as suggested in
+;; https://github.com/spegoraro/org-alert/issues/20
+(defvar org-alert-notification-cutoff 10
+  "Time in minutes before a deadline a notification should be sent.")
 
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
@@ -49,21 +53,37 @@
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
   "property/todo/tags match string to be passed to `org-map-entries'.")
 
-;; for use in place of (org-get-heading) in dispatch. trying to grab
-;; scheduled date from the subtree of the heading instead of just the
-;; heading
-(defun org-alert--parse-entry ()
-  (org-get-heading t t t t)
-  (org-copy-subtree)
-  (let* ((text (current-kill 0))
-	 (beg 0)
-	 (end (length text)))
-    (set-text-properties beg end nil text)
+(defun org-alert--strip-text-properties (text)
+  "Strip all of the text properties from a copy of TEXT and
+return the stripped copy"
+  (let ((text (substring text)))
+    (set-text-properties 0 (length text) nil text)
     text))
+
+(defun org-alert--grab-subtree ()
+  "Return the current org subtree as a string with the
+text-properties stripped"
+  (org-copy-subtree)
+  (let* ((subtree (current-kill 0))
+	 (text (org-alert--strip-text-properties subtree)))
+    (apply #'concat
+	   (remove-if #'(lambda (s) (string= s ""))
+	       (cdr (split-string text "\n"))))))
+
+(defun org-alert--parse-entry ()
+  "Parse an entry from the org agenda and return a list of the
+heading and the scheduled/deadline hour and minute"
+  (let ((head (org-alert--strip-text-properties
+	       (org-get-heading t t t t)))
+	(body (org-alert--grab-subtree)))
+    (string-match "\\(SCHEDULED\\|DEADLINE\\):.+ \\([0-9]+\\):\\([0-9]+\\)[^0-9]" body)
+    (list head (match-string 2 body) (match-string 3 body))))
 
 ;; somewhere have (and cutoff (< cutoff ...)) to check if notif should
 ;; be sent, and let cutoff default to nil to preserve the old behavior
 (defun org-alert--dispatch ()
+  ;; TODO port over my time checking code and wrap this in a
+  ;; conditional based on it
   (alert (org-get-heading t t t t) :title org-alert-notification-title))
 
 (defun org-alert-check ()
@@ -73,13 +93,11 @@
                    '(org-agenda-skip-entry-if 'todo
                                               org-done-keywords-for-agenda)))
 
-
 (defun org-alert-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
   (interactive)
   (org-alert-disable)
   (run-at-time 0 org-alert-interval 'org-alert-check))
-
 
 (defun org-alert-disable ()
   "Cancel the running notification timer."
@@ -87,8 +105,6 @@
   (dolist (timer timer-list)
     (if (eq (elt timer 5) 'org-alert-check)
 	(cancel-timer timer))))
-
-
 
 (provide 'org-alert)
 ;;; org-alert.el ends here
