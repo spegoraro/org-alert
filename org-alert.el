@@ -43,7 +43,7 @@
 
 ;; TODO look for a property of the agenda entry as suggested in
 ;; https://github.com/spegoraro/org-alert/issues/20
-(defvar org-alert-notification-cutoff 10
+(defvar org-alert-notify-cutoff 10
   "Time in minutes before a deadline a notification should be sent.")
 
 (defvar org-alert-notification-title "*org*"
@@ -70,21 +70,34 @@ text-properties stripped"
 	   (remove-if #'(lambda (s) (string= s ""))
 	       (cdr (split-string text "\n"))))))
 
+(defun org-alert--to-minute (hour minute)
+  "Convert HOUR and MINUTE to minutes"
+  (+ (* 60 hour) minute))
+
+
+(defun org-alert--check-time (time &optional now)
+  "Check that TIME is less than current time"
+  (let* ((time (mapcar #'string-to-number (split-string time ":")))
+	 (now (or now (decode-time (current-time))))
+	 (now (org-alert--to-minute (decoded-time-hour now) (decoded-time-minute now)))
+	 (then (org-alert--to-minute (car time) (cadr time))))
+    (<= (- then now) org-alert-notify-cutoff)))
+
+
 (defun org-alert--parse-entry ()
   "Parse an entry from the org agenda and return a list of the
-heading and the scheduled/deadline hour and minute"
-  (let ((head (org-alert--strip-text-properties
-	       (org-get-heading t t t t)))
+heading and the scheduled/deadline time"
+  (let ((head (org-alert--strip-text-properties (org-get-heading t t t t)))
 	(body (org-alert--grab-subtree)))
-    (string-match "\\(SCHEDULED\\|DEADLINE\\):.+ \\([0-9]+\\):\\([0-9]+\\)[^0-9]" body)
-    (list head (match-string 2 body) (match-string 3 body))))
+    (string-match "\\(SCHEDULED\\|DEADLINE\\):.+ \\([0-9]+:[0-9]+\\)[^0-9]" body)
+    (list head (match-string 2 body))))
 
-;; somewhere have (and cutoff (< cutoff ...)) to check if notif should
-;; be sent, and let cutoff default to nil to preserve the old behavior
 (defun org-alert--dispatch ()
-  ;; TODO port over my time checking code and wrap this in a
-  ;; conditional based on it
-  (alert (org-get-heading t t t t) :title org-alert-notification-title))
+  (let* ((entry (org-alert--parse-entry))
+	 (head (car entry))
+	 (time (cadr entry)))
+    (when (org-alert--check-time time)
+      (alert (concat time ": " head) :title org-alert-notification-title))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
