@@ -39,6 +39,13 @@ Installing via melpa is a simple as:
 `package-install` RET `org-alert` RET
 
 
+### use-package
+
+```elisp
+(use-package org-alert
+  :ensure t)
+```
+
 ### Manually
 
 Clone the repo somewhere you will remember and then add it to your
@@ -51,6 +58,8 @@ load path.
 
 
 ## Configuration
+
+### Notification styles
 
 org-alert uses the excellent
 [alert](https://github.com/jwiegley/alert) package from John Wiegley
@@ -66,6 +75,11 @@ To get system notifications like the screenshot use the following:
 
 You can even define your own styles!
 
+### Alert intervals
+
+`org-alert-interval` determines how often org-alert checks your agenda
+file, and `org-alert-notify-cutoff` controls how long before a
+scheduled event a notification should be sent.
 
 ### Custom titles
 
@@ -79,10 +93,11 @@ notifications when using a daemon such as
 
 org-alert searches for agenda entries with 'Sched' or 'Deadline' word
 by default. You can set any other regexp you wish using
-the `org-alert-headline-regexp` variable.
+the `org-alert-match-string` variable.
 
 ## TODOs
 
 * Notification priorities based on headline type (scheduled vs deadline)
+* Set notify-cutoff for individual events using org properties
 
 

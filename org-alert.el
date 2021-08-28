@@ -75,7 +75,6 @@ text-properties stripped"
   "Convert HOUR and MINUTE to minutes"
   (+ (* 60 hour) minute))
 
-
 (defun org-alert--check-time (time &optional now)
   "Check that TIME is less than current time"
   (let* ((time (mapcar #'string-to-number (split-string time ":")))
