@@ -96,8 +96,10 @@ heading and the scheduled/deadline time"
   (let* ((entry (org-alert--parse-entry))
 	 (head (car entry))
 	 (time (cadr entry)))
-    (when (org-alert--check-time time)
-      (alert (concat time ": " head) :title org-alert-notification-title))))
+    (if time
+        (when (org-alert--check-time time)
+          (alert (concat time ": " head) :title org-alert-notification-title))
+        (alert head :title org-alert-notification-title))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
