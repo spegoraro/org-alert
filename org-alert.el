@@ -54,6 +54,11 @@
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
   "property/todo/tags match string to be passed to `org-map-entries'.")
 
+(defvar org-alert-time-match-string
+  "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
+  "regex to find times in an org subtree. The first capture group
+is used to extract the time")
+
 (defun org-alert--strip-text-properties (text)
   "Strip all of the text properties from a copy of TEXT and
 return the stripped copy"
@@ -69,7 +74,7 @@ text-properties stripped"
 	 (text (org-alert--strip-text-properties subtree)))
     (apply #'concat
 	   (cl-remove-if #'(lambda (s) (string= s ""))
-	       (cdr (split-string text "\n"))))))
+			 (cdr (split-string text "\n"))))))
 
 (defun org-alert--to-minute (hour minute)
   "Convert HOUR and MINUTE to minutes"
@@ -83,30 +88,29 @@ text-properties stripped"
 	 (then (org-alert--to-minute (car time) (cadr time))))
     (<= (- then now) org-alert-notify-cutoff)))
 
-
 (defun org-alert--parse-entry ()
   "Parse an entry from the org agenda and return a list of the
 heading and the scheduled/deadline time"
   (let ((head (org-alert--strip-text-properties (org-get-heading t t t t)))
 	(body (org-alert--grab-subtree)))
-    (string-match "\\(SCHEDULED\\|DEADLINE\\):.+ \\([0-9]+:[0-9]+\\)[^0-9]" body)
-    (list head (match-string 2 body))))
+    (string-match org-alert-time-match-string body)
+    (list head (match-string 1 body))))
 
 (defun org-alert--dispatch ()
   (let* ((entry (org-alert--parse-entry))
 	 (head (car entry))
 	 (time (cadr entry)))
     (if time
-        (when (org-alert--check-time time)
-          (alert (concat time ": " head) :title org-alert-notification-title))
-        (alert head :title org-alert-notification-title))))
+	(when (org-alert--check-time time)
+	  (alert (concat time ": " head) :title org-alert-notification-title))
+      (alert head :title org-alert-notification-title))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
   (org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
-                   '(org-agenda-skip-entry-if 'todo
-                                              org-done-keywords-for-agenda)))
+		   '(org-agenda-skip-entry-if 'todo
+					      org-done-keywords-for-agenda)))
 
 (defun org-alert-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
