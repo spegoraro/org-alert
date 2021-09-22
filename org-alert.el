@@ -59,6 +59,32 @@
   "regex to find times in an org subtree. The first capture group
 is used to extract the time")
 
+(defun org-alert--read-subtree ()
+  "Return the current subtree as a string. Adapted from
+`org-copy-subtree` from org-mode."
+  (org-preserve-local-variables
+   (let (beg end folded (beg0 (point)))
+     (org-back-to-heading t)
+     (setq beg (point))
+     (skip-chars-forward " \t\r\n")
+     (save-match-data
+       (save-excursion (outline-end-of-heading)
+		       (setq folded (org-invisible-p)))
+       (ignore-errors (org-forward-heading-same-level (1- n) t))
+       (org-end-of-subtree t t))
+     ;; Include the end of an inlinetask
+     (when (and (featurep 'org-inlinetask)
+		(looking-at-p (concat (org-inlinetask-outline-regexp)
+				      "END[ \t]*$")))
+       (end-of-line))
+     (setq end (point))
+     (goto-char beg0)
+     (when (> end beg)
+       (setq org-subtree-clip-folded folded)
+       (buffer-substring-no-properties beg end)))))
+
+;; I think this is unnecessary now that we're using read-subtree
+;; instead of copy-subtree
 (defun org-alert--strip-text-properties (text)
   "Strip all of the text properties from a copy of TEXT and
 return the stripped copy"
@@ -69,8 +95,7 @@ return the stripped copy"
 (defun org-alert--grab-subtree ()
   "Return the current org subtree as a string with the
 text-properties stripped"
-  (org-copy-subtree)
-  (let* ((subtree (current-kill 0))
+  (let* ((subtree (org-alert--read-subtree))
 	 (text (org-alert--strip-text-properties subtree)))
     (apply #'concat
 	   (cl-remove-if #'(lambda (s) (string= s ""))
@@ -110,7 +135,8 @@ heading and the scheduled/deadline time"
   (interactive)
   (org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
 		   '(org-agenda-skip-entry-if 'todo
-					      org-done-keywords-for-agenda)))
+					      org-done-keywords-for-agenda))
+  t)
 
 (defun org-alert-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
