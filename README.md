@@ -55,15 +55,13 @@ load path.
 (require 'org-alert)
 ```
 
-
-
 ## Configuration
 
 ### Notification styles
 
 org-alert uses the excellent
 [alert](https://github.com/jwiegley/alert) package from John Wiegley
-to present its alerts. This defaults to using the emacs `message`
+to present its alerts. This defaults to using the Emacs `message`
 function for displaying notifications, to change it to something
 prettier set the `alert-default-style` variable to one of the options
 listed [here](https://github.com/jwiegley/alert#builtin-alert-styles).
@@ -77,15 +75,28 @@ You can even define your own styles!
 
 ### Alert intervals
 
-`org-alert-interval` determines how often org-alert checks your agenda
-file, and `org-alert-notify-cutoff` controls how long before a
-scheduled event a notification should be sent.
+`org-alert-interval` determines how often org-alert checks your agenda file, and
+`org-alert-notify-cutoff` controls how long before a scheduled event a
+notification should be sent. `org-alert-notify-after-event-cutoff` controls how
+long after a scheduled event to continue sending notifications.
+
+The snippet:
+
+```elisp
+(setq org-alert-interval 300
+      org-alert-notify-cutoff 10
+      org-alert-notify-after-event-cutoff 10)
+```
+
+will set org-alert to check your agenda file every 5 minutes (300 seconds),
+start notifying you of a scheduled event 10 minutes before the event, and stop
+notifying you of the event 10 minutes after the scheduled time has passed.
 
 ### Custom titles
 
 org-alert uses the title `*org*` by default. You can set this to
 something else by changing the `org-alert-notification-title`
-variable. Use this if you'd like to customise the display of org
+variable. Use this if you'd like to customize the display of org
 notifications when using a daemon such as
 [dunst](https://github.com/knopwob/dunst).
 

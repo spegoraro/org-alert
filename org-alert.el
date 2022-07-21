@@ -47,6 +47,10 @@
 (defvar org-alert-notify-cutoff 10
   "Time in minutes before a deadline a notification should be sent.")
 
+(defvar org-alert-notify-after-event-cutoff nil
+  "Time in minutes after a deadline to stop sending notifications.
+If nil, never stop sending notifications.")
+
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
 
@@ -106,12 +110,20 @@ text-properties stripped"
   (+ (* 60 hour) minute))
 
 (defun org-alert--check-time (time &optional now)
-  "Check that TIME is less than current time"
+  "Check if TIME is less than `org-alert-notify-cutoff` from NOW. If
+`org-alert-notify-after-event-cutoff` is set, also check that NOW
+is less than `org-alert-notify-after-event-cutoff` past TIME."
   (let* ((time (mapcar #'string-to-number (split-string time ":")))
 	 (now (or now (decode-time (current-time))))
 	 (now (org-alert--to-minute (decoded-time-hour now) (decoded-time-minute now)))
-	 (then (org-alert--to-minute (car time) (cadr time))))
-    (<= (- then now) org-alert-notify-cutoff)))
+	 (then (org-alert--to-minute (car time) (cadr time)))
+	 (time-until (- then now)))
+    (if org-alert-notify-after-event-cutoff
+	(and
+	 (<= time-until org-alert-notify-cutoff)
+	 ;; negative time-until past events
+	 (> time-until (- org-alert-notify-after-event-cutoff)))
+      (<= time-until org-alert-notify-cutoff))))
 
 (defun org-alert--parse-entry ()
   "Parse an entry from the org agenda and return a list of the
