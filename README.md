@@ -102,15 +102,21 @@ notifications when using a daemon such as
 
 ### Custom regexp for searching agenda entries
 
-org-alert searches for agenda entries with 'Scheduled' or 'Deadline' properties
+org-alert searches for agenda entries with 'Sched' or 'Deadline' word
 by default. You can set any other regexp you wish using
-the `org-alert-match-string` variable, which defaults to 
+the `org-alert-match-string` variable.
+
+### Custom regexp for matching times
+
+org-alert searches for times within an org subtree using the
+`org-alert-time-match-string` variable, which defaults to
 
 ```
-"SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
+"\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
 ```
 
-For example, if you have nested SCHEDULED items like:
+Like `org-alert-match-string`, you can set this in your config. For example, if
+you have nested SCHEDULED items like:
 
 ```text
 * task 1
@@ -120,10 +126,13 @@ Do something
 SCHEDULED: <2022-12-08 Thu 15:30>
 ```
 
-you may want to use a [non-greedy regular expression](https://github.com/spegoraro/org-alert/issues/29#issue-1485013029) as suggested by [hai5](https://github.com/hai5) to capture the first one rather than the second:
+you may want to use a [non-greedy regular
+expression](https://github.com/spegoraro/org-alert/issues/29#issue-1485013029)
+as suggested by [hai5](https://github.com/hai5) to capture the first one rather
+than the second:
 
 ```elisp
-(setq org-alert-match-string
+(setq org-alert-time-match-string
       "\\(?:SCHEDULED\\|DEADLINE\\):.*?<.*?\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>")
 ````
 
