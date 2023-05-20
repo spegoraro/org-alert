@@ -94,6 +94,20 @@ will set org-alert to check your agenda file every 5 minutes (300 seconds),
 start notifying you of a scheduled event 10 minutes before the event, and stop
 notifying you of the event 10 minutes after the scheduled time has passed.
 
+You can also set the cutoff on a per-item basis using the `org-alert-cutoff-prop`
+property, which defaults to `REMINDERN`. For example, the entry
+
+```org
+* TODO remindern test
+  SCHEDULED: <2023-05-20 Sat 09:55>
+  :PROPERTIES:
+  :REMINDERN: 15
+  :END:
+```
+
+will alert 15 minutes before the scheduled time, regardless of the value of 
+`org-alert-notify-cutoff`.
+
 ### Custom titles
 
 org-alert uses the title `*org*` by default. You can set this to
