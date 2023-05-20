@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/org-alert-badge.svg)](https://melpa.org/#/org-alert)
+
 # org-alert
 
 Provides notifications for scheduled or deadlined agenda entries.
