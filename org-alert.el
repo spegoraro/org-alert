@@ -45,7 +45,7 @@
 ;; TODO look for a property of the agenda entry as suggested in
 ;; https://github.com/spegoraro/org-alert/issues/20
 (defvar org-alert-notify-cutoff 10
-  "Time in minutes before a deadline a notification should be sent.")
+  "Default time in minutes before a deadline a notification should be sent.")
 
 (defvar org-alert-notify-after-event-cutoff nil
   "Time in minutes after a deadline to stop sending notifications.
@@ -62,6 +62,10 @@ If nil, never stop sending notifications.")
   "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
   "regex to find times in an org subtree. The first capture group
 is used to extract the time")
+
+(defvar org-alert-cutoff-prop
+  "REMINDERN"
+  "org property used to set a custom cutoff for an individual entry")
 
 (defun org-alert--read-subtree ()
   "Return the current subtree as a string. Adapted from
@@ -98,19 +102,26 @@ return the stripped copy"
 
 (defun org-alert--grab-subtree ()
   "Return the current org subtree as a string with the
-text-properties stripped"
+text-properties stripped, along with the cutoff to apply"
   (let* ((subtree (org-alert--read-subtree))
+	 (props (org-entry-properties))
+	 (prop (alist-get org-alert-cutoff-prop props org-alert-notify-cutoff nil #'string-equal))
+	 (prop (if (stringp prop)
+		   (string-to-number prop)
+		 prop))
 	 (text (org-alert--strip-text-properties subtree)))
-    (apply #'concat
-	   (cl-remove-if #'(lambda (s) (string= s ""))
-			 (cdr (split-string text "\n"))))))
+    (list
+     (apply #'concat
+	    (cl-remove-if #'(lambda (s) (string= s ""))
+			  (cdr (split-string text "\n"))))
+     prop)))
 
 (defun org-alert--to-minute (hour minute)
   "Convert HOUR and MINUTE to minutes"
   (+ (* 60 hour) minute))
 
-(defun org-alert--check-time (time &optional now)
-  "Check if TIME is less than `org-alert-notify-cutoff` from NOW. If
+(defun org-alert--check-time (time cutoff &optional now)
+  "Check if TIME is less than CUTOFF (in minutes) from NOW. If
 `org-alert-notify-after-event-cutoff` is set, also check that NOW
 is less than `org-alert-notify-after-event-cutoff` past TIME."
   (let* ((time (mapcar #'string-to-number (split-string time ":")))
@@ -120,27 +131,26 @@ is less than `org-alert-notify-after-event-cutoff` past TIME."
 	 (time-until (- then now)))
     (if org-alert-notify-after-event-cutoff
 	(and
-	 (<= time-until org-alert-notify-cutoff)
+	 (<= time-until cutoff)
 	 ;; negative time-until past events
 	 (> time-until (- org-alert-notify-after-event-cutoff)))
-      (<= time-until org-alert-notify-cutoff))))
+      (<= time-until cutoff))))
 
 (defun org-alert--parse-entry ()
   "Parse an entry from the org agenda and return a list of the
-heading and the scheduled/deadline time"
-  (let ((head (org-alert--strip-text-properties (org-get-heading t t t t)))
-	(body (org-alert--grab-subtree)))
-    (string-match org-alert-time-match-string body)
-    (list head (match-string 1 body))))
+heading, the scheduled/deadline time, and the cutoff to apply"
+  (let ((head (org-alert--strip-text-properties (org-get-heading t t t t))))
+    (cl-destructuring-bind (body cutoff) (org-alert--grab-subtree)
+      (string-match org-alert-time-match-string body)
+      (list head (match-string 1 body) cutoff))))
 
 (defun org-alert--dispatch ()
-  (let* ((entry (org-alert--parse-entry))
-	 (head (car entry))
-	 (time (cadr entry)))
-    (if time
-	(when (org-alert--check-time time)
-	  (alert (concat time ": " head) :title org-alert-notification-title))
-      (alert head :title org-alert-notification-title))))
+  (let ((entry (org-alert--parse-entry)))
+    (cl-destructuring-bind (head time cutoff) entry
+      (if time
+	  (when (org-alert--check-time time cutoff)
+	    (alert (concat time ": " head) :title org-alert-notification-title))
+	(alert head :title org-alert-notification-title)))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
