@@ -105,8 +105,10 @@ property, which defaults to `REMINDERN`. For example, the entry
   :END:
 ```
 
-will alert 15 minutes before the scheduled time, regardless of the value of 
-`org-alert-notify-cutoff`.
+will alert 15 minutes before the scheduled time, regardless of the value of
+`org-alert-notify-cutoff`. If you happen to be using
+[org-wild-notifier.el](https://github.com/akhramov/org-wild-notifier.el), you
+might want to use `WILD_NOTIFIER_NOTIFY_BEFORE` instead of `REMINDERN`.
 
 ### Custom titles
 
@@ -155,6 +157,3 @@ than the second:
 ## TODOs
 
 * Notification priorities based on headline type (scheduled vs deadline)
-* Set notify-cutoff for individual events using org properties
-
-
