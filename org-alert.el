@@ -141,16 +141,18 @@ is less than `org-alert-notify-after-event-cutoff` past TIME."
 heading, the scheduled/deadline time, and the cutoff to apply"
   (let ((head (org-alert--strip-text-properties (org-get-heading t t t t))))
     (cl-destructuring-bind (body cutoff) (org-alert--grab-subtree)
-      (string-match org-alert-time-match-string body)
-      (list head (match-string 1 body) cutoff))))
+      (if (string-match org-alert-time-match-string body)
+	  (list head (match-string 1 body) cutoff)
+	nil))))
 
 (defun org-alert--dispatch ()
   (let ((entry (org-alert--parse-entry)))
-    (cl-destructuring-bind (head time cutoff) entry
-      (if time
-	  (when (org-alert--check-time time cutoff)
-	    (alert (concat time ": " head) :title org-alert-notification-title))
-	(alert head :title org-alert-notification-title)))))
+    (when entry
+      (cl-destructuring-bind (head time cutoff) entry
+	(if time
+	    (when (org-alert--check-time time cutoff)
+	      (alert (concat time ": " head) :title org-alert-notification-title))
+	  (alert head :title org-alert-notification-title))))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
