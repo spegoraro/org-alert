@@ -118,6 +118,14 @@ variable. Use this if you'd like to customize the display of org
 notifications when using a daemon such as
 [dunst](https://github.com/knopwob/dunst).
 
+### Custom categories
+
+org-alert uses the category `'org-alert` by default. You can set this to
+something else by changing the `org-alert-notification-category`
+variable. Use this if you'd like to customize the display of org
+notifications when using a notification function that supports
+distinct categories via the `alert` `:category` property.
+
 ### Custom regexp for searching agenda entries
 
 org-alert searches for agenda entries with 'Sched' or 'Deadline' word
