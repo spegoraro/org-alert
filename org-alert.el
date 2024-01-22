@@ -67,7 +67,7 @@ is used to extract the time")
   "REMINDERN"
   "org property used to set a custom cutoff for an individual entry")
 
-(defvar org-alert-category
+(defvar org-alert-notification-category
   'org-alert
   "The symbol to pass to alert as the :category property, in order
 to allow differentiation from other uses of alert")
@@ -158,9 +158,9 @@ heading, the scheduled/deadline time, and the cutoff to apply"
 	    (when (org-alert--check-time time cutoff)
 	      (alert (concat time ": " head)
                      :title org-alert-notification-title
-                     :category org-alert-category))
+                     :category org-alert-notification-category))
 	  (alert head :title org-alert-notification-title
-                 :category org-alert-category))))))
+                 :category org-alert-notification-category))))))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
