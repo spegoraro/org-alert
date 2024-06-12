@@ -38,39 +38,58 @@
 (require 'alert)
 (require 'org-agenda)
 
+(defgroup org-alert nil
+  "Notify org deadlines via notify-send."
+  :group 'org-agenda)
 
-(defvar org-alert-interval 300
-  "Interval in seconds to recheck and display deadlines.")
+(defcustom org-alert-interval 300
+  "Interval in seconds to recheck and display deadlines."
+  :group 'org-alert
+  :type 'integer)
 
 ;; TODO look for a property of the agenda entry as suggested in
 ;; https://github.com/spegoraro/org-alert/issues/20
-(defvar org-alert-notify-cutoff 10
-  "Default time in minutes before a deadline a notification should be sent.")
+(defcustom org-alert-notify-cutoff 10
+  "Default time in minutes before a deadline a notification should be sent."
+  :group 'org-alert
+  :type 'integer)
 
-(defvar org-alert-notify-after-event-cutoff nil
+(defcustom org-alert-notify-after-event-cutoff nil
   "Time in minutes after a deadline to stop sending notifications.
-If nil, never stop sending notifications.")
+If nil, never stop sending notifications."
+  :group 'org-alert
+  :type '(choice integer (const nil)))
 
-(defvar org-alert-notification-title "*org*"
-  "Title to be sent with notify-send.")
+(defcustom org-alert-notification-title "*org*"
+  "Title to be sent with notify-send."
+  :group 'org-alert
+  :type 'string)
 
-(defvar org-alert-match-string
+(defcustom org-alert-match-string
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
-  "property/todo/tags match string to be passed to `org-map-entries'.")
+  "property/todo/tags match string to be passed to `org-map-entries'."
+  :group 'org-alert
+  :type 'regexp)
 
-(defvar org-alert-time-match-string
+(defcustom org-alert-time-match-string
   "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
   "regex to find times in an org subtree. The first capture group
-is used to extract the time")
+is used to extract the time"
+  :group 'org-alert
+  :type 'regexp)
 
-(defvar org-alert-cutoff-prop
+(defcustom org-alert-cutoff-prop
   "REMINDERN"
-  "org property used to set a custom cutoff for an individual entry")
+  "org property used to set a custom cutoff for an individual entry"
+  :group 'org-alert
+  :type 'string)
 
-(defvar org-alert-notification-category
+(defcustom org-alert-notification-category
   'org-alert
   "The symbol to pass to alert as the :category property, in order
-to allow differentiation from other uses of alert")
+to allow differentiation from other uses of alert"
+  :group 'org-alert
+  :type 'symbol)
 
 (defun org-alert--read-subtree ()
   "Return the current subtree as a string. Adapted from
