@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.2.0
-;; Package-Requires: ((org "9.0") (alert "1.2"))
+;; Package-Requires: ((org "9.0") (alert "1.2") (org-ql "0.8.7") (ts "0.2-pre"))
 ;; Keywords: org, org-mode, notify, notifications, calendar
 ;; URL: https://github.com/spegoraro/org-alert
 
@@ -37,6 +37,8 @@
 (require 'cl-lib)
 (require 'alert)
 (require 'org-agenda)
+(require 'org-ql)
+(require 'ts)
 
 (defgroup org-alert nil
   "Notify org deadlines via notify-send."
@@ -69,7 +71,9 @@ If nil, never stop sending notifications."
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
   "property/todo/tags match string to be passed to `org-map-entries'."
   :group 'org-alert
-  :type 'regexp)
+  :type '(choice (regexp :tag "Match Regexp")
+				 (const :tag "Match All" nil)
+				 (const :tag "Use org-ql to match active time" org-ql)))
 
 (defcustom org-alert-time-match-string
   "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
@@ -181,22 +185,33 @@ heading, the scheduled/deadline time, and the cutoff to apply"
           (alert head :title org-alert-notification-title
                  :category org-alert-notification-category))))))
 
-(defun org-alert--map-entries (func)
-  (org-map-entries func org-alert-match-string 'agenda
-                   '(org-agenda-skip-entry-if 'todo
-                                              org-done-keywords-for-agenda)))
+(defun org-alert--check-using-org-ql ()
+  "Check for active, due deadlines and initiate notifications using `org-ql'.
+This will match org heading with active timestamp, from now, until the
+next `org-alert-notify-cutoff' minutes."
+  (interactive)
+  (org-ql-select (org-agenda-files)
+	`(ts-active :with-time t
+				:from ,(ts-format "%F %T")
+				:to ,(ts-format "%F %T" (ts-adjust 'minute org-alert-notify-cutoff (ts-now))))
+	:action #'org-alert--dispatch)
+  t)
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (org-alert--map-entries 'org-alert--dispatch)
+  (if (eq org-alert-match-string 'org-ql)
+	  (org-alert--check-using-org-ql)
+	(org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
+			 '(org-agenda-skip-entry-if 'todo
+							org-done-keywords-for-agenda)))
   t)
 
 (defun org-alert-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
   (interactive)
   (org-alert-disable)
-  (run-at-time 0 org-alert-interval 'org-alert-check))
+  (run-at-time t org-alert-interval 'org-alert-check))
 
 (defun org-alert-disable ()
   "Cancel the running notification timer."
