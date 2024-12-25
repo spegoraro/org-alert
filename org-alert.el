@@ -101,13 +101,13 @@ to allow differentiation from other uses of alert"
      (skip-chars-forward " \t\r\n")
      (save-match-data
        (save-excursion (outline-end-of-heading)
-		       (setq folded (org-invisible-p)))
+                       (setq folded (org-invisible-p)))
        (ignore-errors (org-forward-heading-same-level (1- n) t))
        (org-end-of-subtree t t))
      ;; Include the end of an inlinetask
      (when (and (featurep 'org-inlinetask)
-		(looking-at-p (concat (org-inlinetask-outline-regexp)
-				      "END[ \t]*$")))
+                (looking-at-p (concat (org-inlinetask-outline-regexp)
+                                      "END[ \t]*$")))
        (end-of-line))
      (setq end (point))
      (goto-char beg0)
@@ -128,16 +128,16 @@ return the stripped copy"
   "Return the current org subtree as a string with the
 text-properties stripped, along with the cutoff to apply"
   (let* ((subtree (org-alert--read-subtree))
-	 (props (org-entry-properties))
-	 (prop (alist-get org-alert-cutoff-prop props org-alert-notify-cutoff nil #'string-equal))
-	 (prop (if (stringp prop)
-		   (string-to-number prop)
-		 prop))
-	 (text (org-alert--strip-text-properties subtree)))
+         (props (org-entry-properties))
+         (prop (alist-get org-alert-cutoff-prop props org-alert-notify-cutoff nil #'string-equal))
+         (prop (if (stringp prop)
+                   (string-to-number prop)
+                 prop))
+         (text (org-alert--strip-text-properties subtree)))
     (list
      (apply #'concat
-	    (cl-remove-if #'(lambda (s) (string= s ""))
-			  (cdr (split-string text "\n"))))
+            (cl-remove-if #'(lambda (s) (string= s ""))
+                          (cdr (split-string text "\n"))))
      prop)))
 
 (defun org-alert--to-minute (hour minute)
@@ -149,15 +149,15 @@ text-properties stripped, along with the cutoff to apply"
 `org-alert-notify-after-event-cutoff` is set, also check that NOW
 is less than `org-alert-notify-after-event-cutoff` past TIME."
   (let* ((time (mapcar #'string-to-number (split-string time ":")))
-	 (now (or now (decode-time (current-time))))
-	 (now (org-alert--to-minute (decoded-time-hour now) (decoded-time-minute now)))
-	 (then (org-alert--to-minute (car time) (cadr time)))
-	 (time-until (- then now)))
+         (now (or now (decode-time (current-time))))
+         (now (org-alert--to-minute (decoded-time-hour now) (decoded-time-minute now)))
+         (then (org-alert--to-minute (car time) (cadr time)))
+         (time-until (- then now)))
     (if org-alert-notify-after-event-cutoff
-	(and
-	 (<= time-until cutoff)
-	 ;; negative time-until past events
-	 (> time-until (- org-alert-notify-after-event-cutoff)))
+        (and
+         (<= time-until cutoff)
+         ;; negative time-until past events
+         (> time-until (- org-alert-notify-after-event-cutoff)))
       (<= time-until cutoff))))
 
 (defun org-alert--parse-entry ()
@@ -166,26 +166,25 @@ heading, the scheduled/deadline time, and the cutoff to apply"
   (let ((head (org-alert--strip-text-properties (org-get-heading t t t t))))
     (cl-destructuring-bind (body cutoff) (org-alert--grab-subtree)
       (if (string-match org-alert-time-match-string body)
-	  (list head (match-string 1 body) cutoff)
-	nil))))
+          (list head (match-string 1 body) cutoff)
+        nil))))
 
 (defun org-alert--dispatch ()
   (let ((entry (org-alert--parse-entry)))
     (when entry
       (cl-destructuring-bind (head time cutoff) entry
-	(if time
-	    (when (org-alert--check-time time cutoff)
-	      (alert (concat time ": " head)
+        (if time
+            (when (org-alert--check-time time cutoff)
+              (alert (concat time ": " head)
                      :title org-alert-notification-title
                      :category org-alert-notification-category))
-	  (alert head :title org-alert-notification-title
+          (alert head :title org-alert-notification-title
                  :category org-alert-notification-category))))))
 
 (defun org-alert--map-entries (func)
   (org-map-entries func org-alert-match-string 'agenda
-				   '(org-agenda-skip-entry-if 'todo
-											  org-done-keywords-for-agenda)))
-
+                   '(org-agenda-skip-entry-if 'todo
+                                              org-done-keywords-for-agenda)))
 
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
@@ -204,7 +203,7 @@ heading, the scheduled/deadline time, and the cutoff to apply"
   (interactive)
   (dolist (timer timer-list)
     (if (eq (elt timer 5) 'org-alert-check)
-	(cancel-timer timer))))
+        (cancel-timer timer))))
 
 (provide 'org-alert)
 ;;; org-alert.el ends here
