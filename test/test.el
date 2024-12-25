@@ -21,9 +21,10 @@
 		   ;; really bad sign for the default value in the package
 		   (org-alert-match-string
 			"SCHEDULED<\"<yesterday>\"+SCHEDULED<\"<tomorrow>\""))
-	   (unwind-protect
-		   (progn ,@body)
-		 (test-alert-reset)))))
+	   (with-environment-variables (("TZ" "UTC4"))
+		 (unwind-protect
+			 (progn ,@body)
+		   (test-alert-reset))))))
 
 (defmacro with-current-time (time &rest body)
   "Override `current-time` to return `Sat May 20 09:40:01 2023`, 15 minutes
@@ -67,7 +68,6 @@ a post-event cutoff set but the current time set appropriately."
 	(with-current-time (25704 52667 0 0) ; 9:40:11
 	  (let ((org-alert-notify-after-event-cutoff 60))
 		(should (= (length test-alert-notifications) 0))
-		(print (current-time-string (current-time)))
 		(org-alert-check)
 		(should (= (length test-alert-notifications) 1))))))
 
@@ -92,6 +92,5 @@ a post-event cutoff set but the current time set appropriately."
   (with-test-org "plain.org"
 	(with-current-time (25704 52945 0 0) ; 9:44:49
 	  (should (= (length test-alert-notifications) 0))
-		(print (current-time-string (current-time)))
 	  (org-alert-check)
 	  (should (= (length test-alert-notifications) 0)))))
