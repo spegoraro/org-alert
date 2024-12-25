@@ -4,12 +4,13 @@
   "checks that we can extract the correct cutoff from the
  PROPERTIES of a subtree"
   (let ((org-directory ".")
-	(org-agenda-files (list "test.org")))
+		(org-agenda-files (list "test.org")))
     (should (equal
-	     '(("remindern test" "09:55" 15))
-	     (org-map-entries 'org-alert--parse-entry org-alert-match-string 'agenda
-			      '(org-agenda-skip-entry-if 'todo
-							 org-done-keywords-for-agenda))))))
+			 '(("remindern test" "09:55" 15))
+			 (org-map-entries
+			  'org-alert--parse-entry org-alert-match-string 'agenda
+			  '(org-agenda-skip-entry-if 'todo
+										 org-done-keywords-for-agenda))))))
 
 ;; TODO idea here is generate an org file with a timestamp in the near future to
 ;; check if the notification actually works
