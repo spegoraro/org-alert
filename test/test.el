@@ -65,3 +65,14 @@ a post-event cutoff set but the current time set appropriately."
 	 (let ((org-alert-notify-after-event-cutoff 60))
 	   (org-alert-check)
 	   (should (= (length test-alert-notifications) 1))))))
+
+(ert-deftest check-alert-none-remindern ()
+  "Check that `org-alert-check` sends an alert from `test.org` with
+a post-event cutoff set but the current time set appropriately."
+  (with-test-org
+   ;; (current-time-string '(25704 52655 0 0)) => "Sat May 20 09:39:59 2023" or
+   ;; just before the notification should trigger
+   (with-current-time (25704 52655 0 0)
+	 (let ((org-alert-notify-after-event-cutoff 60))
+	   (org-alert-check)
+	   (should (= (length test-alert-notifications) 0))))))
