@@ -3,6 +3,6 @@
 set -xe
 
 emacs -batch -f package-initialize \
-	  --eval '(use-package :ensure t alert)'
+	  --eval '(use-package alert :ensure t)'
 
 cd test && make test
