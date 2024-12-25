@@ -64,7 +64,7 @@ a post-event cutoff set."
   "Check that `org-alert-check` sends an alert from `test.org` with
 a post-event cutoff set but the current time set appropriately."
   (with-test-org nil
-	(with-current-time '(25704 52667 0 0) ; 9:40:11
+	(with-current-time (25704 52667 0 0) ; 9:40:11
 	  (let ((org-alert-notify-after-event-cutoff 60))
 		(org-alert-check)
 		(should (= (length test-alert-notifications) 1))))))
