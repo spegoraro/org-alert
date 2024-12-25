@@ -67,6 +67,7 @@ a post-event cutoff set but the current time set appropriately."
 	(with-current-time (25704 52667 0 0) ; 9:40:11
 	  (let ((org-alert-notify-after-event-cutoff 60))
 		(should (= (length test-alert-notifications) 0))
+		(print (current-time-string (current-time)))
 		(org-alert-check)
 		(should (= (length test-alert-notifications) 1))))))
 
@@ -78,7 +79,6 @@ a post-event cutoff set but the current time set appropriately."
 	;; just before the notification should trigger
 	(with-current-time (25704 52655 0 0)
 	  (let ((org-alert-notify-after-event-cutoff 60))
-		(print (current-time-string (current-time)))
 		(org-alert-check)
 		(should (= (length test-alert-notifications) 0))))))
 
