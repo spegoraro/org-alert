@@ -72,7 +72,7 @@ a post-event cutoff set but the current time set appropriately."
         (should (= (length test-alert-notifications) 1))))))
 
 (ert-deftest check-alert-none-remindern ()
-  "Check that `org-alert-check` sends an alert from `test.org` with
+  "Check that `org-alert-check` does not send an alert from `test.org` with
 a post-event cutoff set but the current time set appropriately."
   (with-test-org nil
     ;; (current-time-string '(25704 52655 0 0)) => "Sat May 20 09:39:59 2023" or
