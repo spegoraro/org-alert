@@ -66,6 +66,7 @@ a post-event cutoff set but the current time set appropriately."
   (with-test-org nil
 	(with-current-time (25704 52667 0 0) ; 9:40:11
 	  (let ((org-alert-notify-after-event-cutoff 60))
+		(should (= (length test-alert-notifications) 0))
 		(org-alert-check)
 		(should (= (length test-alert-notifications) 1))))))
 
@@ -89,5 +90,6 @@ a post-event cutoff set but the current time set appropriately."
 (ert-deftest check-alert-none ()
   (with-test-org "plain.org"
 	(with-current-time (25704 52945 0 0) ; 9:44:49
+	  (should (= (length test-alert-notifications) 0))
 	  (org-alert-check)
 	  (should (= (length test-alert-notifications) 0)))))
