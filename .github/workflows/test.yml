@@ -15,8 +15,10 @@ jobs:
     strategy:
       matrix:
         emacs_version:
-          - 28.1
-          - 28.2
+          - 29.1
+          - 29.2
+          - 29.3
+          - 29.4
           - snapshot
       fail-fast: false
     steps:
