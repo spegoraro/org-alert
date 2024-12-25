@@ -21,8 +21,9 @@
 		   ;; really bad sign for the default value in the package
 		   (org-alert-match-string
 			"SCHEDULED<\"<yesterday>\"+SCHEDULED<\"<tomorrow>\""))
-	   ,@body
-	   (test-alert-reset))))
+	   (unwind-protect
+		   (progn ,@body)
+		 (test-alert-reset)))))
 
 (defmacro with-current-time (time &rest body)
   "Override `current-time` to return `Sat May 20 09:40:01 2023`, 15 minutes
