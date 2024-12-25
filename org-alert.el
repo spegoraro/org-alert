@@ -181,12 +181,16 @@ heading, the scheduled/deadline time, and the cutoff to apply"
 	  (alert head :title org-alert-notification-title
                  :category org-alert-notification-category))))))
 
+(defun org-alert--map-entries (func)
+  (org-map-entries func org-alert-match-string 'agenda
+				   '(org-agenda-skip-entry-if 'todo
+											  org-done-keywords-for-agenda)))
+
+
 (defun org-alert-check ()
   "Check for active, due deadlines and initiate notifications."
   (interactive)
-  (org-map-entries 'org-alert--dispatch org-alert-match-string 'agenda
-		   '(org-agenda-skip-entry-if 'todo
-					      org-done-keywords-for-agenda))
+  (org-alert--map-entries 'org-alert--dispatch)
   t)
 
 (defun org-alert-enable ()

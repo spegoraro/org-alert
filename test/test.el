@@ -28,10 +28,7 @@
   (with-test-org
     (should (equal
 			 '(("remindern test" "09:55" 15))
-			 (org-map-entries
-			  'org-alert--parse-entry org-alert-match-string 'agenda
-			  '(org-agenda-skip-entry-if 'todo
-										 org-done-keywords-for-agenda))))))
+			 (org-alert--map-entries 'org-alert--parse-entry)))))
 
 (ert-deftest check-alert-default ()
   "Check that `org-alert-check` sends an alert from `test.org`.
