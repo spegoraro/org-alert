@@ -22,6 +22,16 @@
 	 ,@body
 	 (test-alert-reset)))
 
+(defmacro with-current-time (time &rest body)
+  "Override `current-time` to return `Sat May 20 09:40:01 2023`, 15 minutes
+before the scheduled event in `test.org`."
+  ;; (current-time-string '(25704 52657 0 0))
+  (declare (indent defun))
+  (let ((time (or time '(25704 52657 0 0))))
+	`(cl-letf (((symbol-function 'current-time)
+				(lambda () ',time)))
+	   ,@body)))
+
 (ert-deftest org-alert-custom-cutoff ()
   "checks that we can extract the correct cutoff from the
  PROPERTIES of a subtree"
@@ -39,7 +49,7 @@ nil, so any time in the past will be alerted."
    (org-alert-check)
    (should (= (length test-alert-notifications) 1))))
 
-(ert-deftest check-alert-none ()
+(ert-deftest check-alert-none-cutoff ()
   "Check that `org-alert-check` does not send an alert from `test.org` with
 a post-event cutoff set."
   (with-test-org
@@ -47,13 +57,11 @@ a post-event cutoff set."
    (org-alert-check)
    (should (= (length test-alert-notifications) 0)))))
 
-;; TODO idea here is generate an org file with a timestamp in the near future to
-;; check if the notification actually works
-
-;; (let ((org-directory ".")
-;;       (org-agenda-files (list "test.org")))
-;;   (org-alert-check))
-
-;; (org-time-stamp '(16) nil)
-;; <2023-05-20 Sat 10:22>
-
+(ert-deftest check-alert-some-remindern ()
+  "Check that `org-alert-check` sends an alert from `test.org` with
+a post-event cutoff set but the current time set appropriately."
+  (with-test-org
+   (with-current-time nil
+	 (let ((org-alert-notify-after-event-cutoff 60))
+	   (org-alert-check)
+	   (should (= (length test-alert-notifications) 1))))))
