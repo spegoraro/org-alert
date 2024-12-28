@@ -88,6 +88,14 @@ a post-event cutoff set but the current time set appropriately."
       (org-alert-check)
       (should (= (length test-alert-notifications) 1)))))
 
+(ert-deftest check-alert-multiple ()
+  (with-test-org "plain.org"
+    (with-current-time (25704 52957 0 0) ; 9:45:01
+      (org-alert-check)
+      (org-alert-check)
+      (org-alert-check)
+      (should (= (length test-alert-notifications) 3)))))
+
 (ert-deftest check-alert-none ()
   (with-test-org "plain.org"
     (with-current-time (25704 52945 0 0) ; 9:44:49
