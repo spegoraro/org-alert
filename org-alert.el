@@ -201,14 +201,15 @@ heading, the scheduled/deadline time, and the cutoff to apply"
 This will match org heading with active timestamp, from now, until the
 next `org-alert-notify-cutoff' minutes."
   (interactive)
-  (org-ql-select (org-agenda-files)
-	`(or (ts-active :with-time t
-					:from ,(org-alert--get-after-event-cutoff-time)
-					:to ,(ts-format "%F %T" (ts-adjust 'minute org-alert-notify-cutoff (ts-now))))
-		 (and (property ,org-alert-cutoff-prop)
-			  (ts-active :with-time t
-						 :from ,(org-alert--get-after-event-cutoff-time))))
-	:action #'org-alert--dispatch)
+  (let ((org-ql-cache (make-hash-table)))
+    (org-ql-select (org-agenda-files)
+	  `(or (ts-active :with-time t
+					  :from ,(org-alert--get-after-event-cutoff-time)
+					  :to ,(ts-format "%F %T" (ts-adjust 'minute org-alert-notify-cutoff (ts-now))))
+		   (and (property ,org-alert-cutoff-prop)
+			    (ts-active :with-time t
+						   :from ,(org-alert--get-after-event-cutoff-time))))
+	  :action #'org-alert--dispatch))
   t)
 
 ;;;###autoload
