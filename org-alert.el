@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.2.0
-;; Package-Requires: ((org "9.0") (alert "1.2"))
+;; Package-Requires: ((org "9.0") (alert "1.2") (org-ql "0.9-pre") (ts "0.2-pre"))
 ;; Keywords: org, org-mode, notify, notifications, calendar
 ;; URL: https://github.com/spegoraro/org-alert
 
@@ -37,6 +37,8 @@
 (require 'cl-lib)
 (require 'alert)
 (require 'org-agenda)
+(require 'org-ql)
+(require 'ts)
 
 (defgroup org-alert nil
   "Notify org deadlines via notify-send."
@@ -69,10 +71,11 @@ If nil, never stop sending notifications."
   "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
   "property/todo/tags match string to be passed to `org-map-entries'."
   :group 'org-alert
-  :type 'regexp)
+  :type '(choice (regexp :tag "Match Regexp")
+				 (const :tag "Match All" nil)))
 
 (defcustom org-alert-time-match-string
-  "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
+  "<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
   "regex to find times in an org subtree. The first capture group
 is used to extract the time"
   :group 'org-alert
@@ -181,22 +184,40 @@ heading, the scheduled/deadline time, and the cutoff to apply"
           (alert head :title org-alert-notification-title
                  :category org-alert-notification-category))))))
 
+(defun org-alert--get-after-event-cutoff-time ()
+  "Get the time to how early we want to get the events."
+  (when org-alert-notify-after-event-cutoff
+	(ts-format "%F %T"
+			   (ts-adjust 'minute (- org-alert-notify-after-event-cutoff)
+						  (ts-now)))))
+
 (defun org-alert--map-entries (func)
   (org-map-entries func org-alert-match-string 'agenda
                    '(org-agenda-skip-entry-if 'todo
                                               org-done-keywords-for-agenda)))
 
 (defun org-alert-check ()
-  "Check for active, due deadlines and initiate notifications."
+  "Check for active, due deadlines and initiate notifications using `org-ql'.
+This will match org heading with active timestamp, from now, until the
+next `org-alert-notify-cutoff' minutes."
   (interactive)
-  (org-alert--map-entries 'org-alert--dispatch)
+  (let ((org-ql-cache (make-hash-table)))
+    (org-ql-select (org-agenda-files)
+	  `(or (ts-active :with-time t
+					  :from ,(org-alert--get-after-event-cutoff-time)
+					  :to ,(ts-format "%F %T" (ts-adjust 'minute org-alert-notify-cutoff (ts-now))))
+		   (and (property ,org-alert-cutoff-prop)
+			    (ts-active :with-time t
+						   :from ,(org-alert--get-after-event-cutoff-time))))
+	  :action #'org-alert--dispatch))
   t)
 
+;;;###autoload
 (defun org-alert-enable ()
   "Enable the notification timer.  Cancels existing timer if running."
   (interactive)
   (org-alert-disable)
-  (run-at-time 0 org-alert-interval 'org-alert-check))
+  (run-at-time t org-alert-interval 'org-alert-check))
 
 (defun org-alert-disable ()
   "Cancel the running notification timer."

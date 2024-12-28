@@ -1,5 +1,5 @@
 test:
-	emacs -batch -f package-initialize \
+	emacs -Q -batch -f package-initialize \
           -l ert \
           -l alert \
           -l ../org-alert.el \

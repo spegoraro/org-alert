@@ -66,7 +66,9 @@ a post-event cutoff set."
 a post-event cutoff set but the current time set appropriately."
   (with-test-org nil
     (with-current-time (25704 52667 0 0) ; 9:40:11
-      (let ((org-alert-notify-after-event-cutoff 60))
+      (let (
+            ;; (org-alert-notify-after-event-cutoff 60)
+            )
         (should (= (length test-alert-notifications) 0))
         (org-alert-check)
         (should (= (length test-alert-notifications) 1))))))
@@ -78,7 +80,9 @@ a post-event cutoff set but the current time set appropriately."
     ;; (current-time-string '(25704 52655 0 0)) => "Sat May 20 09:39:59 2023" or
     ;; just before the notification should trigger
     (with-current-time (25704 52655 0 0)
-      (let ((org-alert-notify-after-event-cutoff 60))
+      (let (
+            ;; (org-alert-notify-after-event-cutoff 60)
+            )
         (org-alert-check)
         (should (= (length test-alert-notifications) 0))))))
 
@@ -87,6 +91,14 @@ a post-event cutoff set but the current time set appropriately."
     (with-current-time (25704 52957 0 0) ; 9:45:01
       (org-alert-check)
       (should (= (length test-alert-notifications) 1)))))
+
+(ert-deftest check-alert-multiple ()
+  (with-test-org "plain.org"
+    (with-current-time (25704 52957 0 0) ; 9:45:01
+      (org-alert-check)
+      (org-alert-check)
+      (org-alert-check)
+      (should (= (length test-alert-notifications) 3)))))
 
 (ert-deftest check-alert-none ()
   (with-test-org "plain.org"
