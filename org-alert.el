@@ -65,19 +65,6 @@ If nil, never stop sending notifications."
   :group 'org-alert
   :type 'string)
 
-(defcustom org-alert-match-string
-  "SCHEDULED>=\"<today>\"+SCHEDULED<\"<tomorrow>\"|DEADLINE>=\"<today>\"+DEADLINE<\"<tomorrow>\""
-  "property/todo/tags match string to be passed to `org-map-entries'."
-  :group 'org-alert
-  :type 'regexp)
-
-(defcustom org-alert-time-match-string
-  "\\(?:SCHEDULED\\|DEADLINE\\):.*<.*\\([0-9]\\{2\\}:[0-9]\\{2\\}\\).*>"
-  "regex to find times in an org subtree. The first capture group
-is used to extract the time"
-  :group 'org-alert
-  :type 'regexp)
-
 (defcustom org-alert-cutoff-prop
   "REMINDERN"
   "org property used to set a custom cutoff for an individual entry"
@@ -148,41 +135,42 @@ text-properties stripped, along with the cutoff to apply"
   "Check if TIME is less than CUTOFF (in minutes) from NOW. If
 `org-alert-notify-after-event-cutoff` is set, also check that NOW
 is less than `org-alert-notify-after-event-cutoff` past TIME."
-  (let* ((time (mapcar #'string-to-number (split-string time ":")))
-         (now (or now (decode-time (current-time))))
-         (now (org-alert--to-minute (decoded-time-hour now) (decoded-time-minute now)))
-         (then (org-alert--to-minute (car time) (cadr time)))
-         (time-until (- then now)))
-    (if org-alert-notify-after-event-cutoff
-        (and
-         (<= time-until cutoff)
-         ;; negative time-until past events
-         (> time-until (- org-alert-notify-after-event-cutoff)))
-      (<= time-until cutoff))))
+  (when (and (cl-second time) (cl-third time))
+    (let* ((time (encode-time time))
+           (now (if now
+                    (encode-time now)
+                  (current-time)))
+           (time-until (/ (float-time (time-subtract time now)) 60)))
+      (if org-alert-notify-after-event-cutoff
+          (and
+           (<= time-until cutoff)
+           ;; negative time-until past events
+           (> time-until (- org-alert-notify-after-event-cutoff)))
+        (<= time-until cutoff)))))
 
-(defun org-alert--parse-entry ()
-  "Parse an entry from the org agenda and return a list of the
-heading, the scheduled/deadline time, and the cutoff to apply"
-  (let ((head (org-alert--strip-text-properties (org-get-heading t t t t))))
-    (cl-destructuring-bind (body cutoff) (org-alert--grab-subtree)
-      (if (string-match org-alert-time-match-string body)
-          (list head (match-string 1 body) cutoff)
-        nil))))
+(defun org-alert--maybe-alert (heading time-str cutoff)
+  (let ((time (org-parse-time-string time-str t)))
+    (when (org-alert--check-time time cutoff)
+      (alert (format "%02d:%02d: %s" (cl-third time) (cl-second time) heading)
+             :title org-alert-notification-title
+             :category org-alert-notification-category))))
 
 (defun org-alert--dispatch ()
-  (let ((entry (org-alert--parse-entry)))
-    (when entry
-      (cl-destructuring-bind (head time cutoff) entry
-        (if time
-            (when (org-alert--check-time time cutoff)
-              (alert (concat time ": " head)
-                     :title org-alert-notification-title
-                     :category org-alert-notification-category))
-          (alert head :title org-alert-notification-title
-                 :category org-alert-notification-category))))))
+  (let* ((heading (org-get-heading t t t t))
+         (scheduled (org-entry-get (point) "SCHEDULED"))
+         (deadline (org-entry-get (point) "DEADLINE"))
+         (cutoff (or (org-entry-get (point) org-alert-cutoff-prop)
+                     org-alert-notify-cutoff))
+         (cutoff (if (stringp cutoff)
+                     (string-to-number cutoff)
+                   cutoff)))
+    (when scheduled
+      (org-alert--maybe-alert heading scheduled cutoff))
+    (when deadline
+      (org-alert--maybe-alert heading deadline cutoff))))
 
 (defun org-alert--map-entries (func)
-  (org-map-entries func org-alert-match-string 'agenda
+  (org-map-entries func nil 'agenda
                    '(org-agenda-skip-entry-if 'todo
                                               org-done-keywords-for-agenda)))
 
